@@ -210,7 +210,8 @@ def main():
             break
 
     issues_raw = pd.concat(issues_all, ignore_index=True)
-    issues = issues_raw.drop_duplicates("issue_key")
+    issues = (issues_raw.dropna(subset=["issue_key"])
+                        .drop_duplicates("issue_key"))
 
     # This export repeats each issue once per view event, so links repeat too.
     links = pd.concat(links_all, ignore_index=True).drop_duplicates(
@@ -255,8 +256,17 @@ def main():
         """))
         con.execute(text("DROP TABLE issue_links_raw"))
 
-        con.execute(text("CREATE INDEX ON issues (issue_key)"))
+        con.execute(text("ALTER TABLE issues ADD PRIMARY KEY (issue_key)"))
+        con.execute(text("""
+            ALTER TABLE issue_links
+              ADD CONSTRAINT fk_link_source FOREIGN KEY (source_key)
+                  REFERENCES issues(issue_key) ON DELETE CASCADE,
+              ADD CONSTRAINT fk_link_target FOREIGN KEY (target_key)
+                  REFERENCES issues(issue_key) ON DELETE CASCADE
+        """))
+
         con.execute(text("CREATE INDEX ON issues (created)"))
+        con.execute(text("CREATE INDEX ON issues (severity)"))
         con.execute(text("CREATE INDEX ON issue_links (source_key)"))
         con.execute(text("CREATE INDEX ON issue_links (target_key)"))
 
