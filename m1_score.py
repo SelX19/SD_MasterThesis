@@ -35,6 +35,7 @@ USAGE
 import argparse
 import glob
 import json
+import os
 from collections import defaultdict
 from pathlib import Path
 
@@ -44,7 +45,14 @@ from sklearn.metrics import (accuracy_score, classification_report,
 from sqlalchemy import create_engine
 from sqlalchemy import text as sa_text
 
-DEFAULT_DB = "postgresql+psycopg://homas:homas@localhost:5432/homas"
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
+DEFAULT_DB = os.environ.get(
+    "DATABASE_URL", "postgresql+psycopg://homas:homas@localhost:5432/homas")
 LABELS = ["severity", "component", "domain", "resolution_class"]
 CATCH_ALL = {"component": "General", "domain": "General"}
 MIN_SUPPORT = 20          # below this, per-class figures are not reported
